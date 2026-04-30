@@ -2,12 +2,12 @@ const path = require('path');
 const express = require('express');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/hello', (req, res) => {
+app.get('/hello', (req, res) => {
   res.json({ message: 'Hello from the Tic Tac Toe AI server!' });
 });
 
