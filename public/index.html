@@ -61,10 +61,24 @@
       text-align: center;
       width: 300px;
     }
+
+    #startButton {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #startButton:hover {
+      background-color: #218838;
+    }
   </style>
 </head>
 <body>
-  <!-- Register Form -->
+  <!-- Register and Login Form -->
   <div id="authSection">
     <h1>Register or Login</h1>
     <form id="registerForm">
@@ -85,11 +99,14 @@
   <div id="gameSection" style="display: none;">
     <h1>Tic Tac Toe AI</h1>
     <p>Welcome, <span id="usernameDisplay"></span>!</p>
+    <button id="startButton">Start Game</button>
     <button id="logout">Logout</button>
-    <!-- Your Tic Tac Toe game will go here later -->
   </div>
 
   <script>
+    // Simple in-memory storage for users (replace with backend logic if needed)
+    const users = {};
+
     // Check if user is logged in
     const sessionToken = localStorage.getItem('sessionToken');
     const username = localStorage.getItem('username');
@@ -100,51 +117,43 @@
       document.getElementById('usernameDisplay').textContent = username;
     }
 
-    // Register
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    // Register: Allow any username and password
+    document.getElementById('registerForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const username = document.getElementById('regUsername').value;
       const password = document.getElementById('regPassword').value;
-      const res = await fetch('/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      alert(data.message || data.error);
+
+      // Store user (no validation)
+      users[username] = { password };
+      alert(`Registered as ${username}! Please login.`);
+      e.target.reset();
     });
 
-    // Login
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    // Login: Check if user exists and password matches
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const username = document.getElementById('loginUsername').value;
       const password = document.getElementById('loginPassword').value;
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      if (data.sessionToken) {
-        localStorage.setItem('sessionToken', data.sessionToken);
-        localStorage.setItem('username', data.username);
+
+      if (users[username] && users[username].password === password) {
+        localStorage.setItem('sessionToken', 'dummy-token'); // Replace with real token if using a backend
+        localStorage.setItem('username', username);
         window.location.reload();
       } else {
-        alert(data.error);
+        alert('Invalid username or password.');
       }
     });
 
     // Logout
-    document.getElementById('logout').addEventListener('click', async () => {
-      const sessionToken = localStorage.getItem('sessionToken');
-      await fetch('/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionToken })
-      });
+    document.getElementById('logout').addEventListener('click', () => {
       localStorage.removeItem('sessionToken');
       localStorage.removeItem('username');
       window.location.reload();
+    });
+
+    // Start Game: Redirect to game.html
+    document.getElementById('startButton').addEventListener('click', () => {
+      window.location.href = 'game.html';
     });
   </script>
 </body>
