@@ -40,6 +40,11 @@
     .cell:hover {
       background-color: #e9e9e9;
     }
+    #status {
+      margin: 10px 0;
+      font-size: 18px;
+      font-weight: bold;
+    }
     #backButton {
       margin-top: 20px;
       padding: 10px 20px;
@@ -55,6 +60,7 @@
   <div class="game-container">
     <h1>Tic Tac Toe</h1>
     <p>Welcome, <span id="playerName"></span>!</p>
+    <p id="status">Player X's turn</p>
     <div class="board" id="board">
       <div class="cell" data-index="0"></div>
       <div class="cell" data-index="1"></div>
@@ -83,17 +89,62 @@
       window.location.href = '/';
     });
 
-    // Tic Tac Toe game logic (add later)
+    // Game logic
     const board = document.getElementById('board');
     const cells = document.querySelectorAll('.cell');
+    const status = document.getElementById('status');
+    let currentPlayer = 'X';
+    let gameState = ['', '', '', '', '', '', '', '', ''];
+    let gameActive = true;
 
+    // Winning conditions
+    const winningConditions = [
+      [0, 1, 2], // Top row
+      [3, 4, 5], // Middle row
+      [6, 7, 8], // Bottom row
+      [0, 3, 6], // Left column
+      [1, 4, 7], // Middle column
+      [2, 5, 8], // Right column
+      [0, 4, 8], // Diagonal (top-left to bottom-right)
+      [2, 4, 6]  // Diagonal (top-right to bottom-left)
+    ];
+
+    // Handle cell click
     cells.forEach(cell => {
       cell.addEventListener('click', () => {
-        if (!cell.textContent) {
-          cell.textContent = 'X'; // Placeholder for game logic
+        const index = parseInt(cell.getAttribute('data-index'));
+
+        if (gameState[index] === '' && gameActive) {
+          gameState[index] = currentPlayer;
+          cell.textContent = currentPlayer;
+
+          // Check for a winner
+          checkWinner();
+
+          // Switch player
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          status.textContent = `Player ${currentPlayer}'s turn`;
         }
       });
     });
+
+    // Check for a winner
+    function checkWinner() {
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+          status.textContent = `${gameState[a]} WINS!`;
+          gameActive = false;
+          return;
+        }
+      }
+
+      // Check for a draw
+      if (!gameState.includes('')) {
+        status.textContent = 'DRAW!';
+        gameActive = false;
+      }
+    }
   </script>
 </body>
 </html>
