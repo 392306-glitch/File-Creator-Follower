@@ -45,7 +45,7 @@
       font-size: 18px;
       font-weight: bold;
     }
-    #backButton {
+    #backButton, #saveButton {
       margin-top: 20px;
       padding: 10px 20px;
       background-color: #6c757d;
@@ -53,6 +53,10 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+    }
+    #saveButton {
+      background-color: #28a745;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -72,7 +76,10 @@
       <div class="cell" data-index="7"></div>
       <div class="cell" data-index="8"></div>
     </div>
-    <button id="backButton">Back to Home</button>
+    <div>
+      <button id="backButton">Back to Home</button>
+      <button id="saveButton">Save Game</button>
+    </div>
   </div>
 
   <script>
@@ -92,20 +99,34 @@
     // Game logic
     const cells = document.querySelectorAll('.cell');
     const status = document.getElementById('status');
-    let currentPlayer = 'X';
-    let gameState = ['', '', '', '', '', '', '', '', ''];
-    let gameActive = true;
+    const saveButton = document.getElementById('saveButton');
+
+    // Load game state from localStorage
+    let currentPlayer = localStorage.getItem('currentPlayer') || 'X';
+    let gameState = JSON.parse(localStorage.getItem('gameState')) || ['', '', '', '', '', '', '', '', ''];
+    let gameActive = !(localStorage.getItem('gameActive') === 'false');
+
+    // Update the board and status on page load
+    cells.forEach((cell, index) => {
+      cell.textContent = gameState[index];
+    });
+
+    if (!gameActive) {
+      const winner = localStorage.getItem('winner');
+      if (winner) {
+        status.textContent = `${winner} WINS!`;
+      } else if (!gameState.includes('')) {
+        status.textContent = 'DRAW!';
+      }
+    } else {
+      status.textContent = `Player ${currentPlayer}'s turn`;
+    }
 
     // Winning conditions
     const winningConditions = [
-      [0, 1, 2], // Top row
-      [3, 4, 5], // Middle row
-      [6, 7, 8], // Bottom row
-      [0, 3, 6], // Left column
-      [1, 4, 7], // Middle column
-      [2, 5, 8], // Right column
-      [0, 4, 8], // Diagonal (top-left to bottom-right)
-      [2, 4, 6]  // Diagonal (top-right to bottom-left)
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+      [0, 4, 8], [2, 4, 6]             // Diagonals
     ];
 
     // Handle cell click
@@ -117,10 +138,8 @@
         gameState[index] = currentPlayer;
         cell.textContent = currentPlayer;
 
-        // Check for a winner
         checkWinner();
 
-        // Switch player if the game is still active
         if (gameActive) {
           currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
           status.textContent = `Player ${currentPlayer}'s turn`;
@@ -135,16 +154,25 @@
         if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
           status.textContent = `${gameState[a]} WINS!`;
           gameActive = false;
+          localStorage.setItem('winner', gameState[a]);
           return;
         }
       }
 
-      // Check for a draw
       if (!gameState.includes('')) {
         status.textContent = 'DRAW!';
         gameActive = false;
+        localStorage.removeItem('winner');
       }
     }
+
+    // Save game state to localStorage
+    saveButton.addEventListener('click', () => {
+      localStorage.setItem('gameState', JSON.stringify(gameState));
+      localStorage.setItem('currentPlayer', currentPlayer);
+      localStorage.setItem('gameActive', gameActive);
+      alert('Game saved!');
+    });
 
     // Add event listeners to cells
     cells.forEach(cell => {
