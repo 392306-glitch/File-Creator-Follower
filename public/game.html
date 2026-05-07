@@ -101,26 +101,10 @@
     const status = document.getElementById('status');
     const saveButton = document.getElementById('saveButton');
 
-    // Load game state from localStorage
-    let currentPlayer = localStorage.getItem('currentPlayer') || 'X';
-    let gameState = JSON.parse(localStorage.getItem('gameState')) || ['', '', '', '', '', '', '', '', ''];
-    let gameActive = !(localStorage.getItem('gameActive') === 'false');
-
-    // Update the board and status on page load
-    cells.forEach((cell, index) => {
-      cell.textContent = gameState[index];
-    });
-
-    if (!gameActive) {
-      const winner = localStorage.getItem('winner');
-      if (winner) {
-        status.textContent = `${winner} WINS!`;
-      } else if (!gameState.includes('')) {
-        status.textContent = 'DRAW!';
-      }
-    } else {
-      status.textContent = `Player ${currentPlayer}'s turn`;
-    }
+    let currentPlayer = 'X';
+    let gameState = ['', '', '', '', '', '', '', '', ''];
+    let gameActive = true;
+    let winner = null;
 
     // Winning conditions
     const winningConditions = [
@@ -152,9 +136,9 @@
       for (let condition of winningConditions) {
         const [a, b, c] = condition;
         if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
-          status.textContent = `${gameState[a]} WINS!`;
+          winner = gameState[a];
+          status.textContent = `${winner} WINS!`;
           gameActive = false;
-          localStorage.setItem('winner', gameState[a]);
           return;
         }
       }
@@ -162,16 +146,60 @@
       if (!gameState.includes('')) {
         status.textContent = 'DRAW!';
         gameActive = false;
-        localStorage.removeItem('winner');
       }
     }
 
-    // Save game state to localStorage
-    saveButton.addEventListener('click', () => {
-      localStorage.setItem('gameState', JSON.stringify(gameState));
-      localStorage.setItem('currentPlayer', currentPlayer);
-      localStorage.setItem('gameActive', gameActive);
-      alert('Game saved!');
+    // Save game to games.json
+    saveButton.addEventListener('click', async () => {
+      const gameData = {
+        player1: localStorage.getItem('username') || 'Player1',
+        player2: 'Player2',
+        winner: winner || (gameActive ? null : 'DRAW'),
+        gameState: gameState,
+        date: new Date().toISOString()
+      };
+
+      try {
+        // Fetch existing games.json from GitHub
+        const response = await fetch('https://api.github.com/repos/392306-glitch/File-Creator-Follower/contents/public/games.json');
+        let games = [];
+
+        if (response.ok) {
+          const data = await response.json();
+          const content = atob(data.content);
+          games = JSON.parse(content).games;
+        }
+
+        // Add new game data
+        games.push(gameData);
+
+        // Update games.json on GitHub
+        const updatedContent = JSON.stringify({ games }, null, 2);
+        const encodedContent = btoa(updatedContent);
+
+        const updateResponse = await fetch('https://api.github.com/repos/392306-glitch/File-Creator-Follower/contents/public/games.json', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ghp_${Math.random().toString(36).substring(2, 22)}`, // Placeholder
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: 'Update games.json',
+            content: encodedContent,
+            sha: response.ok ? (await response.json()).sha : null
+          })
+        });
+
+        if (updateResponse.ok) {
+          alert('Game saved to games.json!');
+        } else {
+          console.error('Failed to save game:', await updateResponse.text());
+          alert('Failed to save game. Check console for details.');
+        }
+      } catch (error) {
+        console.error('Error saving game:', error);
+        alert('Error saving game. Check console for details.');
+      }
     });
 
     // Add event listeners to cells
